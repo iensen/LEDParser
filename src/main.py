@@ -28,6 +28,7 @@ either expressed or implied, of the FreeBSD Project.
 """
 
 from optparse import OptionParser
+
 from preprocessor import *
 
 def parse_arguments():
