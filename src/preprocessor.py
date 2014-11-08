@@ -29,8 +29,8 @@ either expressed or implied, of the FreeBSD Project.
 
 import re
 import os
-from genparser.src.astgen.lexer import *
-from genparser.src.astgen.parser import *
+from genparser.src.astgen.parsing.lexer import *
+from genparser.src.astgen.parsing.parser import *
 special_lexemes = ["var", "vars", "def","ddef","iff"]
 
 
@@ -49,8 +49,8 @@ class Preprocessor:
 
         self.column = 0
         self.line = 0
-        lexicon_file = os.path.join(os.path.abspath(__file__),"genparser","src","astgen","tests","led","lexicon")
-        grammar_file = os.path.join(os.path.abspath(__file__),"genparser","src","astgen","tests","led","grammar_1")
+        lexicon_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),"genparser","src","astgen","tests","led","lexicon")
+        grammar_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),"genparser","src","astgen","tests","led","grammar_1")
         self.lexer = Lexer(lexicon_file,False)
         self.parser = Parser(grammar_file, self.lexer.lexicon_dict.keys())
 
@@ -69,24 +69,25 @@ class Preprocessor:
         cur_line = 1
         while not done:
             # search for the start of the next program region
-            region_start_comment = re.search(r"\\-+",cur_contents)
-            if region_start_comment.start()==-1 :
+            region_start_comment = re.search(r"/-+",cur_contents)
+            if region_start_comment is None :
                 done = True
                 continue
 
-
-
-            cur_line += cur_contents[:region_start_comment.start()].count('\n')
-            cur_contents = cur_contents[region_end_comment+1:]
             # find matching end
-            region_end_comment = re.search(r"-+\\",cur_contents)
-            if region_end_comment.start() == -1:
+            region_end_comment = re.search(r"-+/",cur_contents)
+
+            if region_end_comment.start() is None:
                 raise UnmatchedRegionComment(cur_line)
 
-            region = cur_contents[0:region_end_comment.start()]
-            elements.extends(self.get_elements_from_region(region))
+            cur_line += cur_contents[:region_start_comment.start()].count('\n')
+
+            region = cur_contents[region_start_comment.end()+1:region_end_comment.start()]
+            elements.extend(self.get_elements_from_region(region))
             cur_line += cur_contents[:region_end_comment.start()].count('\n')
             cur_contents =  cur_contents[region_end_comment.end()+1:]
+
+        return elements
 
 
 
@@ -128,6 +129,10 @@ class Preprocessor:
                 # is there a guard?
                 if(spec_sym_idx>=0 and lexing_sequence[spec_sym_idx][0] == "then"):
                     return Preprocessor.find_guard_if_idx(lexing_sequence,spec_sym_idx)
+                else:
+                    return spec_sym_idx+1
+            else:
+                return spec_sym_idx
 
         elif lexing_sequence[spec_sym_idx][0] == 'ddef':
             # found a type definition
@@ -148,18 +153,27 @@ class Preprocessor:
                 i = self.find_first_special_lexeme_idx(lexing_sequence)
                 if i == -1:
                   if not Preprocessor.all_spaces_left(lexing_sequence):
-                      raise InvalidProgramElement(Preprocessor.get_text_from_lexemes(lexing_sequence),self.line)
+                     raise InvalidProgramElement(region,self.line)
                   else:
-                      done = True
-                      continue
-                next_i = self.find_first_special_lexeme_idx(lexing_sequence[1:])
-                elem_first_idx = Preprocessor.find_element_start_idx(lexing_sequence,i)
-                elem_last_idx = Preprocessor.find_element_start_idx(lexing_sequence,next_i)-1
-                if(elem_first_idx<0 or elem_last_idx<0):
-                    raise InvalidProgramElement(Preprocessor.get_text_from_lexemes(lexing_sequence),self.line)
-                elements.append(self.parser.get_ast(lexing_sequence[elem_first_idx,elem_last_idx+1])[1])
-                lexing_sequence = lexing_sequence[elem_last_idx+1:]
-            return None
+                     break
+                next_i = self.find_first_special_lexeme_idx(lexing_sequence[i+1:])
+                if next_i is None:
+                    ast = self.parser.get_ast(lexing_sequence,False)
+                    if ast is None:
+                        raise InvalidProgramElement(region,self.line)
+                    elements.append(ast.children[0])
+                    break
+                else:
+                     elem_last_idx = Preprocessor.find_element_start_idx(lexing_sequence,next_i+i+1)-1
+                     if( elem_last_idx<0):
+                        raise InvalidProgramElement(Preprocessor.get_text_from_lexemes(lexing_sequence),self.line)
+                     ast = self.parser.get_ast(lexing_sequence[:elem_last_idx+1], False)
+                     if ast is None:
+                        raise InvalidProgramElement(region,self.line)
+                     elements.append(ast.children[0])
+                     lexing_sequence = lexing_sequence[elem_last_idx+1:]
+
+            return elements
 
     def find_first_special_lexeme_idx(self, lexing_sequence):
         for i in range(len(lexing_sequence)):
