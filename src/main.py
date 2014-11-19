@@ -31,6 +31,7 @@ from optparse import OptionParser
 
 from preprocessor import *
 
+
 def parse_arguments():
     """
     Returns the arguments passed to the program. The arguments are parsed from sys.argv.
@@ -57,7 +58,6 @@ def main():
     preprocessor_instance = Preprocessor(program_file)
 
     # print the list of program elements
-
     print(preprocessor_instance.get_elements())
 
 
