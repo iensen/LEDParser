@@ -46,8 +46,8 @@ xImage(c) :=
     Union[c in gameBoard] cellDisplay(c)
 
  currentPlayerDisplay := 
-   {((100,450),15,"x's Turn")} if currentPlayer='x';
-   {((100,450),15,"o's Turn")} if currentPlayer='o'
+   {((100,450),15,'x_s Turn')} if currentPlayer='x';
+   {((100,450),15,'o_s Turn')} if currentPlayer='o'
  restartButton := {A1,A2,A3,A4,txt}
  where
    A1 = ((400,475),(500,475)) &
@@ -58,8 +58,8 @@ xImage(c) :=
 
 If gameOver then
  gameResultDisplay := 
-    {((100,450),15,"x won")} if threeInRow('x');
-    {((100,450),15,"o won")} if threeInRow('o');
+    {((100,450),15,'x won')} if threeInRow('x');
+    {((100,450),15,'o won')} if threeInRow('o');
     {((100,450),15,catgotit)}  otherwisewise
  alwaysDisplay :=
    gridDisplay  U cellDisplays  U restartButton 

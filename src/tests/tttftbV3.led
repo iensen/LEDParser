@@ -178,8 +178,8 @@ If the game is not over, *currentPlayerDisplay* is a text in the upper left hand
 /-----------------------------------------------------
 
  currentPlayerDisplay := 
-   {((100,450),15,"x's Turn")} if currentPlayer='x';
-   {((100,450),15,"o's Turn")} if currentPlayer='o'
+   {((100,450),15,'x_s Turn')} if currentPlayer='x';
+   {((100,450),15,'o_s Turn')} if currentPlayer='o'
 --------------------------------------------------------/
 
 
@@ -200,8 +200,8 @@ If the game is over, *gameResultDisplay* is a display in the upper left region o
 
 If gameOver then
  gameResultDisplay := 
-    {((100,450),15,"x won")} if threeInRow('x');
-    {((100,450),15,"o won")} if threeInRow('o');
+    {((100,450),15,'x won')} if threeInRow('x');
+    {((100,450),15,'o won')} if threeInRow('o');
     {((100,450),15,catgotit)}  otherwise
 ---------------------------------------------------------/
 
